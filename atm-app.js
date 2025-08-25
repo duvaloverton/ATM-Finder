@@ -1,50 +1,65 @@
-// atm-app.js
-let map = L.map('map').setView([37.7749, -122.4194], 13);
+let map = L.map('map').setView([39.5, -98.35], 4); // Center USA
+
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// Example ATM markers
-const atms = [
-  {name: "Chime ATM", coords: [37.775, -122.418], type: "chime"},
-  {name: "PayPal ATM", coords: [37.774, -122.42], type: "paypal"},
-  {name: "Cash App ATM", coords: [37.776, -122.417], type: "cashapp"},
-  {name: "Apple Pay ATM", coords: [37.777, -122.416], type: "applepay"}
-];
+async function fetchOSMATMs(lat, lon) {
+  const query = `[out:json][timeout:25];
+    node["amenity"="atm"](around:5000,${lat},${lon});
+    out;`;
 
-const markers = [];
-atms.forEach(atm => {
-  let color = atm.type === "chime" ? "green" :
-              atm.type === "paypal" ? "blue" :
-              atm.type === "cashapp" ? "black" :
-              "orange";
-  let marker = L.marker(atm.coords).addTo(map).bindPopup(atm.name);
-  markers.push({marker, type: atm.type});
-});
-
-// Filters
-document.querySelectorAll('.chip input').forEach(input => {
-  input.addEventListener('change', () => {
-    markers.forEach(m => {
-      const visible = document.getElementById('fltAll').checked ||
-        document.getElementById('fltChime').checked && m.type === 'chime' ||
-        document.getElementById('fltPayPal').checked && m.type === 'paypal' ||
-        document.getElementById('fltCashApp').checked && m.type === 'cashapp' ||
-        document.getElementById('fltApplePay').checked && m.type === 'applepay';
-      if (visible) map.addLayer(m.marker); else map.removeLayer(m.marker);
-    });
+  const response = await fetch("https://overpass-api.de/api/interpreter", {
+    method: "POST",
+    body: query
   });
-});
 
-// Simple search (fly to city)
-document.getElementById('go').addEventListener('click', () => {
-  let q = document.getElementById('search').value;
-  if (!q) return;
-  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data[0]) {
-        map.flyTo([data[0].lat, data[0].lon], 14);
-      }
-    });
-});
+  const data = await response.json();
+  return data.elements.map(atm => ({
+    lat: atm.lat,
+    lon: atm.lon,
+    name: atm.tags.name || "ATM",
+    operator: atm.tags.operator || "Unknown",
+    brand: atm.tags.brand || "Generic"
+  }));
+}
+
+async function loadATMs(lat, lon) {
+  const atms = await fetchOSMATMs(lat, lon);
+
+  atms.forEach(atm => {
+    let popup = `<b>${atm.name}</b><br>Operator: ${atm.operator}<br>Brand: ${atm.brand}`;
+    if (/allpoint|moneypass/i.test(atm.operator + atm.brand)) {
+      popup += "<br><span style='color:green'>Possible fee-free ATM (verify in app)</span>";
+    }
+
+    L.marker([atm.lat, atm.lon]).addTo(map).bindPopup(popup);
+  });
+}
+
+async function searchCity() {
+  const city = document.getElementById("cityInput").value;
+  if (!city) return;
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&countrycodes=us&format=json`);
+  const data = await res.json();
+  if (data.length > 0) {
+    const lat = parseFloat(data[0].lat);
+    const lon = parseFloat(data[0].lon);
+    map.setView([lat, lon], 13);
+    loadATMs(lat, lon);
+  } else {
+    alert("City not found.");
+  }
+}
+
+function locateMe() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      map.setView([lat, lon], 14);
+      loadATMs(lat, lon);
+    }, err => alert("Unable to get location."));
+  }
+}
