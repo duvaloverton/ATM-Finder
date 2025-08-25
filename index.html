@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ATM Finder</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="icon" href="icon.png" type="image/png" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+  <style>
+    body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:#0f172a;color:#e5e7eb}
+    header{display:flex;align-items:center;gap:.6rem;position:sticky;top:0;z-index:1000;background:#0f172a;padding:.8rem 1rem;border-bottom:1px solid #1f2937}
+    header img{height:28px}
+    h1{font-size:1.1rem;margin:0;color:#fff;font-weight:600}
+    .searchbar{flex:1;display:flex;gap:.5rem;margin-left:auto}
+    #search{flex:1;padding:.6rem .9rem;border:1px solid #334155;border-radius:.6rem;background:#0b1225;color:#e5e7eb}
+    #go{padding:.6rem .9rem;border-radius:.6rem;border:none;background:#22c55e;color:#fff;cursor:pointer;transition:.2s}
+    #go:hover{background:#16a34a}
+    #map{height:70vh;border-radius:.8rem;margin:.8rem}
+    .panel{margin:.8rem; padding:.8rem;border:1px solid #1f2937;border-radius:.8rem;background:#111827}
+    .filters{display:flex;flex-wrap:wrap;gap:.6rem}
+    .chip{display:flex;align-items:center;gap:.4rem;padding:.4rem .6rem;border:1px solid #334155;border-radius:999px;background:#0d1326;font-size:.9rem;cursor:pointer;transition:.2s}
+    .chip:hover{border-color:#475569}
+    .chip input{accent-color:#22c55e}
+    .legend{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.5rem}
+    .badge{padding:.25rem .45rem;border-radius:.45rem;font-size:.75rem;border:1px solid #334155;background:#0f172a}
+    .footer{color:#9ca3af;font-size:.85rem;line-height:1.4;margin-top:.5rem}
+    a{color:#9dd1ff}
+  </style>
+</head>
+<body>
+  <header>
+    <img src="icon.png" alt="ATM Finder logo" />
+    <h1>ATM Finder</h1>
+    <div class="searchbar">
+      <input id="search" placeholder="Search city or address" />
+      <button id="go">Find</button>
+    </div>
+  </header>
+
+  <div id="map"></div>
+
+  <div class="panel">
+    <div class="filters">
+      <label class="chip"><input type="checkbox" id="fltChime" checked /> Chime</label>
+      <label class="chip"><input type="checkbox" id="fltPayPal" checked /> PayPal</label>
+      <label class="chip"><input type="checkbox" id="fltCashApp" checked /> Cash App</label>
+      <label class="chip"><input type="checkbox" id="fltApplePay" /> Apple Pay</label>
+      <label class="chip"><input type="checkbox" id="fltAll" /> All ATMs</label>
+    </div>
+    <div class="legend">
+      <span class="badge">🟢 Chime</span>
+      <span class="badge">🔵 PayPal</span>
+      <span class="badge">🟠 Apple Pay</span>
+      <span class="badge">⬛ Other</span>
+    </div>
+    <p class="footer">Works offline once loaded ✅ · Install via “Add to Home Screen.” Uses OpenStreetMap data.</p>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="atm-app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+</body>
+</html>
